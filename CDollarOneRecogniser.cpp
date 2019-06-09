@@ -17,17 +17,17 @@ CDollarOneRecogniser::~CDollarOneRecogniser() {
 	// TODO Auto-generated destructor stub
 }
 
-std::vector<cv::Point> CDollarOneRecogniser::resample(std::vector<cv::Point> points, int n)
+std::vector<cv::Point2d> CDollarOneRecogniser::resample(std::vector<cv::Point2d> points, int n)
 {
 	int I = pathLength(points) / (n-1);
 	float D = 0;
-	std::vector<cv::Point> newPoints;
+	std::vector<cv::Point2d> newPoints;
 	for(int i = 1; i < points.size(); i++)
 	{
 		float d = cv::norm(points[i-1]- points[i]);
 		if((D + d) >= 1)
 		{
-			cv::Point q;
+			cv::Point2d q;
 			q.x = points[i-1].x + ((I - D)/d) * (points[i].x - points[i-1].x);
 			q.y = points[i-1].y + ((I - D)/d) * (points[i].y - points[i-1].y);
 			newPoints.push_back(q);
@@ -42,28 +42,28 @@ std::vector<cv::Point> CDollarOneRecogniser::resample(std::vector<cv::Point> poi
 	return newPoints;
 }
 
-cv::Point2f CDollarOneRecogniser::centroid(std::vector<cv::Point> points)
+cv::Point2d CDollarOneRecogniser::centroid(std::vector<cv::Point2d> points)
 {
 	cv::Rect bbox = cv::boundingRect(points);
-	cv::Point2f c;
+	cv::Point2d c;
 	c.x = bbox.x + (bbox.width / 2);
 	c.y = bbox.y + (bbox.height / 2);
 	return c;
 }
 
-float CDollarOneRecogniser::indicativeAngle(std::vector<cv::Point> points)
+float CDollarOneRecogniser::indicativeAngle(std::vector<cv::Point2d> points)
 {
-	cv::Point2f c = centroid(points);
+	cv::Point2d c = centroid(points);
 	return atan2(c.y - points[0].y, c.x - points[0].x);
 }
 
-std::vector<cv::Point> CDollarOneRecogniser::rotateBy(std::vector<cv::Point> points, float omega)
+std::vector<cv::Point2d> CDollarOneRecogniser::rotateBy(std::vector<cv::Point2d> points, float omega)
 {
-	cv::Point2f c = centroid(points);
-	std::vector<cv::Point> newPoints;
+	cv::Point2d c = centroid(points);
+	std::vector<cv::Point2d> newPoints;
 	for(int i = 0; i < points.size(); i++)
 	{
-		cv::Point2f q;
+		cv::Point2d q;
 		q.x = (points[i].x - c.x)*cos(omega - (points[i].y - c.y)*sin(omega+c.x));
 		q.y = (points[i].x - c.x)*sin(omega - (points[i].y - c.y)*cos(omega+c.y));
 		newPoints.push_back(q);
@@ -71,13 +71,13 @@ std::vector<cv::Point> CDollarOneRecogniser::rotateBy(std::vector<cv::Point> poi
 	return newPoints;
 }
 
-std::vector<cv::Point> CDollarOneRecogniser::scaleTo(std::vector<cv::Point> points, int size)
+std::vector<cv::Point2d> CDollarOneRecogniser::scaleTo(std::vector<cv::Point2d> points, int size)
 {
-	std::vector<cv::Point> newPoints;
+	std::vector<cv::Point2d> newPoints;
 	cv::Rect B = cv::boundingRect(points);
 	for(int i = 0; i < points.size(); i++)
 	{
-		cv::Point q;
+		cv::Point2d q;
 		q.x = points[i].x * size / B.width;
 		q.y = points[i].y * size / B.height;
 		newPoints.push_back(q);
@@ -85,13 +85,13 @@ std::vector<cv::Point> CDollarOneRecogniser::scaleTo(std::vector<cv::Point> poin
 	return newPoints;
 }
 
-std::vector<cv::Point> CDollarOneRecogniser::translateTo(std::vector<cv::Point> points, cv::Point k)
+std::vector<cv::Point2d> CDollarOneRecogniser::translateTo(std::vector<cv::Point2d> points, cv::Point2d k)
 {
-	std::vector<cv::Point> newPoints;
-	cv::Point2f c = centroid(points);
+	std::vector<cv::Point2d> newPoints;
+	cv::Point2d c = centroid(points);
 	for(int i = 0; i < points.size(); i++)
 	{
-		cv::Point q;
+		cv::Point2d q;
 		q.x = points[i].x + k.x - c.x;
 		q.y = points[i].y + k.y - c.y;
 		newPoints.push_back(q);
@@ -99,7 +99,7 @@ std::vector<cv::Point> CDollarOneRecogniser::translateTo(std::vector<cv::Point> 
 	return newPoints;
 }
 
-GestureTemplate* CDollarOneRecogniser::recognise(std::vector<cv::Point> points,
+GestureTemplate* CDollarOneRecogniser::recognise(std::vector<cv::Point2d> points,
 		std::vector<GestureTemplate*> templates, float& score)
 {
 	float b = INFINITY;
@@ -120,7 +120,7 @@ GestureTemplate* CDollarOneRecogniser::recognise(std::vector<cv::Point> points,
 	return T;
 }
 
-float CDollarOneRecogniser::distanceAtBestAngle(std::vector<cv::Point> points,
+float CDollarOneRecogniser::distanceAtBestAngle(std::vector<cv::Point2d> points,
 		GestureTemplate* T, float theta_a, float theta_b, float theta_d)
 {
 	float phi = 0.5*(-1+sqrt(5));
@@ -150,7 +150,7 @@ float CDollarOneRecogniser::distanceAtBestAngle(std::vector<cv::Point> points,
 	return std::min(f1, f2);
 }
 
-int CDollarOneRecogniser::pathLength(std::vector<cv::Point> points)
+int CDollarOneRecogniser::pathLength(std::vector<cv::Point2d> points)
 {
 	float d = 0;
 	for(int i = 1; i < points.size(); i++)
@@ -160,14 +160,14 @@ int CDollarOneRecogniser::pathLength(std::vector<cv::Point> points)
 	return d;
 }
 
-float CDollarOneRecogniser::distanceAtAngle(std::vector<cv::Point> points, GestureTemplate *T, float theta)
+float CDollarOneRecogniser::distanceAtAngle(std::vector<cv::Point2d> points, GestureTemplate *T, float theta)
 {
-	std::vector<cv::Point> newPoints = rotateBy(points, theta);
+	std::vector<cv::Point2d> newPoints = rotateBy(points, theta);
 	float d = pathDistance(newPoints, T->Points());
 	return d;
 }
 
-float CDollarOneRecogniser::pathDistance(std::vector<cv::Point> A, std::vector<cv::Point> B)
+float CDollarOneRecogniser::pathDistance(std::vector<cv::Point2d> A, std::vector<cv::Point2d> B)
 {
 	float d = 0;
 	for(int i = 0; i < A.size(); i++)
@@ -175,4 +175,29 @@ float CDollarOneRecogniser::pathDistance(std::vector<cv::Point> A, std::vector<c
 		d += cv::norm(A[i] - B[i]);
 	}
 	return d / A.size();
+}
+
+GestureTemplate::GestureTemplate()
+{
+
+}
+
+GestureTemplate::~GestureTemplate()
+{
+
+}
+
+std::vector<cv::Point2d> GestureTemplate::Points()
+{
+	return m_vp_points;
+}
+
+std::string GestureTemplate::gestureName()
+{
+	return m_s_gestureName;
+}
+
+void GestureTemplate::readTemplate(std::string templateFilename)
+{
+
 }

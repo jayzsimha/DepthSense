@@ -2,8 +2,56 @@
 
 #include <opencv2/opencv.hpp>
 
+
 #include "ImageSequence.hpp"
 #include "PointExtraction.h"
+#include "CDollarOneRecogniser.h"
+
+void readTemplates(std::vector<GestureTemplate*>& templates)
+{
+	SampleGestures sg;
+	GestureTemplate* T;
+
+	T = new GestureTemplate;
+	T->m_s_gestureName = "Circle";
+	T->m_vp_points = sg.getGestureCircle();
+	templates.push_back(T);
+
+	T = new GestureTemplate;
+	T->m_s_gestureName = "Rectangle";
+	T->m_vp_points = sg.getGestureRectangle();
+	templates.push_back(T);
+
+	T = new GestureTemplate;
+	T->m_s_gestureName = "Star";
+	T->m_vp_points = sg.getGestureStar();
+	templates.push_back(T);
+
+	T = new GestureTemplate;
+	T->m_s_gestureName = "Triangle";
+	T->m_vp_points = sg.getGestureTriangle();
+	templates.push_back(T);
+
+	T = new GestureTemplate;
+	T->m_s_gestureName = "LeftSquareBracket";
+	T->m_vp_points = sg.getGestureLeftSquareBracket();
+	templates.push_back(T);
+
+	T = new GestureTemplate;
+	T->m_s_gestureName = "RightSquareBracket";
+	T->m_vp_points = sg.getGestureRightSquareBracket();
+	templates.push_back(T);
+
+	T = new GestureTemplate;
+	T->m_s_gestureName = "LeftToRightLine";
+	T->m_vp_points = sg.getGestureLeftToRightLine();
+	templates.push_back(T);
+
+	T = new GestureTemplate;
+	T->m_s_gestureName = "RightToLeftLine";
+	T->m_vp_points = sg.getGestureRightToLeftLine();
+	templates.push_back(T);
+}
 
 cv::Mat refineDepthMap(cv::Mat depthImage, cv::Mat confidenceMap)
 {
@@ -37,7 +85,7 @@ int main(int argc, char** argv)
 
 	CImageSequence is(std::string("dataset/ds536/rectangle_cw"), std::string("tif"));
 	std::vector<cv::Mat> imagePair;
-	cv::Mat control_points;
+	std::vector<cv::Point2d> control_points;
 	PointExtraction *pe = new PointExtraction();
 
 	do {
@@ -50,12 +98,15 @@ int main(int argc, char** argv)
 		cv::Point cp;
 		if(pe->extractInterestingPoint(confidentDepth, cp))
 		{
-			if(control_points.empty())
-				control_points = cv::Mat::zeros(confidentDepth.size(), CV_8UC1);
-			control_points.at<uchar>(cp) = UCHAR_MAX;
-			imshow("control_points", control_points);
+			control_points.push_back(cp);
 		}
-		cv::waitKey(10);
 	} while(!depthImage.empty());
+
+	CDollarOneRecogniser *recogniser = new CDollarOneRecogniser();
+	std::vector<GestureTemplate*> templates;
+	readTemplates(templates);
+	float score;
+	GestureTemplate *T = recogniser->recognise(control_points, templates, score);
+	std::cout << "Recognised pattern : " << T->gestureName() << " with score : " << score << std::endl;
     return 0;
 }
